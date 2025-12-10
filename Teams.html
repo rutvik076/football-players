@@ -1,169 +1,420 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Teams & Players</title>
-  <style>
-    body{font-family: Arial; padding:20px}
-    .position{margin-bottom:30px}
-    .position h2{background:#eee;padding:8px;border-radius:6px}
-    .cards{display:flex;flex-wrap:wrap;gap:12px}
-    .card{width:180px;border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center}
-    .card img{width:100%;height:140px;object-fit:cover;border-radius:6px}
-    .name{font-weight:600;margin-top:6px}
-    .pos{color:#666;font-size:13px}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0b1220;
+      --accent: #22c55e;
+      --accent-soft: rgba(34,197,94,0.14);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: rgba(148,163,184,0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top, #1f2937, #020617 60%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .pill span {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+    }
+
+    .teams-label {
+      font-size: 13px;
+      margin: 16px 0 8px;
+      color: var(--text-muted);
+    }
+
+    .team-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .team-btn {
+      flex: 1 1 calc(50% - 10px);
+      min-width: 45%;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      background: linear-gradient(135deg,#0f172a,#020617);
+      color: var(--text-main);
+      padding: 12px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 10px 18px rgba(15,23,42,0.8);
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .team-btn:active {
+      transform: scale(0.97);
+    }
+
+    .team-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(34,197,94,0.7);
+      box-shadow: 0 14px 24px rgba(15,23,42,0.9);
+    }
+
+    .team-btn span.count {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .team-btn span.dot {
+      display:inline-block;
+      width:7px;height:7px;border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 0 4px var(--accent-soft);
+      margin-right:6px;
+    }
+
+    .counter-chip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .counter-chip strong { color: var(--accent); }
+
+    .empty-state {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .empty-state span {
+      display:block;
+      font-size: 34px;
+      margin-bottom: 6px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.85);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 20;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      background: var(--card);
+      border-radius: 18px 18px 0 0;
+      border-top: 1px solid var(--border-subtle);
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .modal-title {
+      font-size:15px;
+      font-weight:600;
+    }
+
+    .modal-meta {
+      font-size:11px;
+      color:var(--text-muted);
+    }
+
+    .close-btn {
+      border:none;
+      background:rgba(15,23,42,0.9);
+      color:var(--text-main);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      cursor:pointer;
+      border:1px solid var(--border-subtle);
+    }
+
+    .players-list {
+      margin-top:4px;
+      overflow-y:auto;
+      padding-right:4px;
+    }
+
+    .player-card {
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: 12px;
+      padding: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .avatar-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: radial-gradient(circle at 30% 20%, #1e293b, #020617);
+    }
+
+    .avatar-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .player-info { flex: 1; min-width: 0; }
+
+    .player-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-pos {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+  </style>
 </head>
 <body>
-  <h1>Teams & Players</h1>
-  <div id="container">Loading…</div>
+  <div class="page">
+    <div class="header">
+      <h1>FC Kaps Tournament</h1>
+	  <p>Welcome, players! Let’s enjoy this beautiful game together.</p>
+    </div>
+
+    <div id="teamsArea">
+      <div class="empty-state">
+        <span>⚽</span>
+        Loading teams…
+      </div>
+    </div>
+
+    <div class="counter-chip" id="counterChip">Loading…</div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modalTitle"></div>
+          <div class="modal-meta" id="modalMeta"></div>
+        </div>
+        <button class="close-btn" onclick="closeModal()">Close</button>
+      </div>
+      <div class="players-list" id="playersList"></div>
+    </div>
+  </div>
 
 <script>
-// CONFIG: replace these
-const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjhzBi9CVvUR9mi5LfyrZcTbFoHpjtz7qe2EyRYcllRuWI_E4XGactvupyZr9ZdQ_LfOOrzW_g3jnA/pub?output=csv";
+// CSV URL (change if needed)
+const SHEET_CSV =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjhzBi9CVvUR9mi5LfyrZcTbFoHpjtz7qe2EyRYcllRuWI_E4XGactvupyZr9ZdQ_LfOOrzW_g3jnA/pub?output=csv";
 
-// Helper: convert Drive open?id=... or /file/d/ID/... to direct image URL
+let teamsMap = {};   // {teamName: [players]}
+let allPlayers = [];
+
+// Normalize Google Drive URLs
 function driveDirectUrl(url) {
   if (!url) return "";
-
-  // Correct regex without invalid flags
-  const idMatch = url.match(/(?:open\?id=|\/file\/d\/|id=)([a-zA-Z0-9_-]{10,})/);
-
-  return idMatch
-    ? `https://drive.google.com/uc?export=view&id=${idMatch[1]}`
-    : url;
+  url = String(url).trim().replace(/&amp;/g, "&");
+  if (/drive\.google\.com\/uc\?/.test(url)) return url;
+  let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (!m) m = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return url;
 }
 
+function buildUI() {
+  const teamsArea = document.getElementById("teamsArea");
+  const counter = document.getElementById("counterChip");
 
-// Parse CSV simple
-function parseCSV(text){
-  const lines = text.trim().split(/\\r?\\n/);
-  const headers = lines.shift().split(',').map(h=>h.trim().replace(/^"|"$/g,''));
-  return lines.map(line=>{
-    // simple CSV split that handles quoted commas
-    const values = [];
-    let cur="", inQ=false;
-    for(let i=0;i<line.length;i++){
-      const ch=line[i];
-      if(ch==='\"'){ inQ=!inQ; continue;}
-      if(ch===',' && !inQ){ values.push(cur); cur=""; continue;}
-      cur+=ch;
-    }
-    values.push(cur);
-    const obj = {};
-    headers.forEach((h,i)=> obj[h]= (values[i]||"").trim().replace(/^"|"$/g,''));
-    return obj;
-  });
+  const teamNames = Object.keys(teamsMap).sort((a,b)=>a.localeCompare(b));
+
+  if (!teamNames.length) {
+    teamsArea.innerHTML = `
+      <div class="empty-state">
+        <span>🕳</span>No players found.
+      </div>`;
+    counter.textContent = "0 players • 0 teams";
+    return;
+  }
+
+  const buttonsHtml = teamNames.map(team => {
+    const count = teamsMap[team].length;
+    return `
+      <button class="team-btn" onclick="openModal('${team.replace(/'/g,"&#39;")}')">
+        <div><span class="dot"></span>${team}</div>
+        <span class="count">${count} ${count === 1 ? "player" : "players"}</span>
+      </button>`;
+  }).join("");
+
+  teamsArea.innerHTML = `
+    <div class="teams-label">Teams</div>
+    <div class="team-buttons">
+      ${buttonsHtml}
+    </div>
+  `;
+
+  counter.innerHTML = `<strong>${allPlayers.length}</strong> players • <strong>${teamNames.length}</strong> teams`;
 }
 
-function render(data){
-  const container = document.getElementById('container');
-  const groups = {};
+function openModal(team) {
+  const players = teamsMap[team] || [];
+  const backdrop = document.getElementById("modalBackdrop");
+  const title = document.getElementById("modalTitle");
+  const meta = document.getElementById("modalMeta");
+  const list = document.getElementById("playersList");
 
-  data.forEach(row => {
-    const team = row['Team Name'] || row['Team'] || 'No Team';
-    const name = row['Player Name'] || row['Player name'] || 'No name';
-    const pos  = row['Player Position'] || row['Player position'] || 'Unknown';
-    const img  = driveDirectUrl(row['Player Image'] || row['Player image'] || '');
+  title.textContent = team;
+  meta.textContent = `${players.length} ${players.length === 1 ? "player" : "players"}`;
 
-    if (!groups[team]) groups[team] = [];
-    groups[team].push({ name, pos, image: img });
-  });
-
-  container.innerHTML = '';
-
-  Object.keys(groups).sort().forEach(team => {
-    const div = document.createElement('div');
-    div.className = 'position'; // reuse same style
-
-    div.innerHTML = `<h2>${team} (${groups[team].length} players)</h2>`;
-    const cards = document.createElement('div');
-    cards.className = 'cards';
-
-    groups[team].forEach(p => {
-      const c = document.createElement('div');
-      c.className = 'card';
-      c.innerHTML = `
+  list.innerHTML = players.map(p => `
+    <div class="player-card">
+      <div class="avatar-wrap">
         <img src="${p.image}" alt="${p.name}" referrerpolicy="no-referrer"
           onerror="
             try{
               if(this.dataset.retried!=='1'){
                 this.dataset.retried='1';
                 const id=(this.src.match(/[?&]id=([a-zA-Z0-9_-]{10,})/)||[])[1];
-                if(id){ this.src='https://drive.google.com/thumbnail?id='+id+'&sz=w640-h400'; return; }
+                if(id){ this.src='https://drive.google.com/thumbnail?id='+id+'&sz=w240-h240'; return; }
               }
             }catch(e){}
-            this.src='https://via.placeholder.com/280x200?text=No+Image';
-            this.style.opacity=0.6;
+            this.src='https://via.placeholder.com/200x200?text=No+Image';
           ">
-        <div class="name">${p.name}</div>
-        <div class="pos">${p.pos}</div>
-      `;
-      cards.appendChild(c);
-    });
+      </div>
+      <div class="player-info">
+        <div class="player-name">${p.name}</div>
+        <div class="player-pos">${p.position}</div>
+      </div>
+    </div>
+  `).join("");
 
-    div.appendChild(cards);
-    container.appendChild(div);
-  });
-
-  container.innerHTML = '';
-  for(const pos of Object.keys(groups).sort()){
-    const div = document.createElement('div'); div.className='position';
-    div.innerHTML = `<h2>${pos} (${groups[pos].length})</h2>`;
-    const cards = document.createElement('div'); cards.className='cards';
-    groups[pos].forEach(p=>{
-      const c = document.createElement('div'); c.className='card';
-      c.innerHTML = `<img src="${p.image}" alt="${p.name}" referrerpolicy="no-referrer"
-  onerror="
-    try{
-      if(this.dataset.retried!=='1'){
-        this.dataset.retried='1';
-        const id=(this.src.match(/[?&]id=([a-zA-Z0-9_-]{10,})/)||[])[1];
-        if(id){ this.src='https://drive.google.com/thumbnail?id='+id+'&sz=w640-h400'; return; }
-      }
-    }catch(e){}
-    console.warn('Image final failed:', this.src);
-    this.src='https://via.placeholder.com/280x200?text=No+Image';
-    this.style.opacity=0.6;
-  ">
-                     <div class="name">${p.name}</div>
-                     <div class="pos">${pos}</div>`;
-      cards.appendChild(c);
-    });
-    div.appendChild(cards);
-    container.appendChild(div);
-  }
+  backdrop.style.display = "flex";
 }
 
-// Fetch CSV and show
+function closeModal() {
+  document.getElementById("modalBackdrop").style.display = "none";
+}
+
+// Load CSV and build structures
 fetch(SHEET_CSV)
   .then(r => r.text())
   .then(txt => {
-    // parse without header so we can detect where the real header row is
     const parsed = Papa.parse(txt, { header: false, skipEmptyLines: true });
     const rows = parsed.data;
 
-    // find the header row index by looking for "Player Name" or similar
     const hdrIdx = rows.findIndex(r =>
-      r.some(cell => typeof cell === 'string' && /player\s*name/i.test(cell))
+      r.some(cell => typeof cell === "string" && /player\s*name/i.test(cell))
     );
-    if (hdrIdx === -1) {
-      throw new Error('Header row not found (needs "Player Name").');
-    }
+    if (hdrIdx === -1) throw new Error("Header row not found (needs 'Player Name').");
 
-    // build objects using that header row
-    const headers = rows[hdrIdx].map(h => (h||'').trim());
-    const data = rows.slice(hdrIdx + 1).map(r => {
+    const headers = rows[hdrIdx].map(h => (h || "").trim());
+    const dataRows = rows.slice(hdrIdx + 1);
+
+    allPlayers = dataRows.map(r => {
       const obj = {};
-      headers.forEach((h,i) => obj[h] = r[i] === undefined ? '' : r[i]);
-      return obj;
+      headers.forEach((h, i) => obj[h] = r[i] === undefined ? "" : r[i]);
+
+      const name = obj["Player Name"] || obj["Player name"] || "No name";
+      const pos  = obj["Player Position"] || obj["Player position"] || "Unknown";
+      const team = obj["Team Name"] || obj["Team"] || "No Team";
+      const img  = driveDirectUrl(obj["Player Image"] || obj["Player image"] || "");
+
+      return { name, position: pos, team, image: img };
     });
-    render(data);
+
+    teamsMap = {};
+    allPlayers.forEach(p => {
+      const key = p.team || "No Team";
+      if (!teamsMap[key]) teamsMap[key] = [];
+      teamsMap[key].push(p);
+    });
+
+    buildUI();
   })
   .catch(err => {
-    document.getElementById('container').textContent = 'Error loading sheet: ' + err;
+    console.error(err);
+    document.getElementById("teamsArea").innerHTML = `
+      <div class="empty-state">
+        <span>⚠️</span>Error loading sheet: ${err}
+      </div>`;
+    document.getElementById("counterChip").textContent = "Error";
   });
 </script>
 </body>
