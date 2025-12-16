@@ -143,6 +143,40 @@
       text-align: center;
       color: var(--text-muted);
     }
+    /* Running banner */
+    .banner {
+      margin: 12px 0 18px;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: linear-gradient(135deg, #0f172a, #020617);
+      box-shadow: 0 8px 18px rgba(15,23,42,0.85);
+    }
+    
+    .banner-track {
+      display: flex;
+      width: max-content;
+      animation: scroll-left 20s linear infinite;
+    }
+    
+    .banner-text {
+      white-space: nowrap;
+      padding: 10px 32px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    
+    @keyframes scroll-left {
+      from {
+        transform: translateX(0);
+      }
+      to {
+        transform: translateX(-50%);
+      }
+    }
   </style>
 </head>
 <body>
@@ -153,7 +187,16 @@
         Welcome to all players — let’s enjoy the beautiful game of football together.
       </p>
     </header>
-
+    <div class="banner">
+      <div class="banner-track">
+            <div class="banner-text">
+              ⚽ Tournament starts on 21 December 2025 • Reporting time: 10:00 AM • FC Kaps Tournament ⚽
+            </div>
+            <div class="banner-text">
+              ⚽ Tournament starts on 21 December 2025 • Reporting time: 10:00 AM • FC Kaps Tournament ⚽
+            </div>
+      </div>
+    </div>
     <main class="nav">
       <a class="nav-btn" href="PlayerDetails.html">
         <span class="label">
@@ -178,3 +221,4 @@
   </div>
 </body>
 </html>
+
