@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fixtures</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0b1220;
+      --accent: #22c55e;
+      --accent-soft: rgba(34,197,94,0.16);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: rgba(148,163,184,0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background: radial-gradient(circle at top, #1f2937, #020617 60%);
+      color: var(--text-main);
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .header p {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.4);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 10px;
+      color: var(--text-muted);
+    }
+
+    .pill span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .section-title {
+      margin: 16px 0 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .fixture-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .fixture-card {
+      background: linear-gradient(135deg, #0f172a, #020617);
+      padding: 18px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      box-shadow: 0 10px 20px rgba(15,23,42,0.85);
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+
+    .fixture-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(34,197,94,0.7);
+    }
+
+    .fixture-card small {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .modal-box {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 22px 20px;
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+      width: 90%;
+      max-width: 320px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+
+    .modal-box h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .modal-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .modal-box button {
+      margin-top: 14px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15,23,42,0.9);
+      color: var(--text-main);
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Fixtures</h1>
+    <p>Match schedule and tournament planning.</p>
+    <div class="pill"><span></span>Coming Soon</div>
+  </div>
+
+  <div class="section-title">Schedule & Matchups</div>
+
+  <div class="fixture-grid">
+    <div class="fixture-card" onclick="openModal()">
+      Tournament Fixtures
+      <small>Upcoming matches & schedule</small>
+    </div>
+  </div>
+</div>
+
+<!-- Popup -->
+<div class="modal" id="fixtureModal">
+  <div class="modal-box">
+    <h3>Fixtures Coming Soon</h3>
+    <p>
+      Match schedules and team matchups will be announced shortly.
+    </p>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+function openModal() {
+  document.getElementById('fixtureModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('fixtureModal').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
