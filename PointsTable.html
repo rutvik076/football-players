@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Points Table</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body{
+  font-family:Poppins,sans-serif;
+  background:radial-gradient(circle at top,#1f2937,#020617 60%);
+  color:#e5e7eb;
+  padding:16px;
+}
+.page{max-width:480px;margin:auto}
+h1{font-size:22px;margin-bottom:10px}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+th,td{
+  padding:8px 6px;
+  text-align:center;
+  border-bottom:1px solid rgba(148,163,184,.3);
+}
+th{color:#9ca3af}
+.team{text-align:left;font-weight:600}
+tr:nth-child(1),tr:nth-child(2){background:rgba(34,197,94,.08)}
+
+.scorer-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.scorer-card{
+  background:linear-gradient(135deg,#0f172a,#020617);
+  border:1px solid rgba(148,163,184,.35);
+  border-radius:14px;
+  padding:8px;
+  text-align:center;
+}
+.scorer-card img{
+  width:100%;
+  height:90px;
+  object-fit:cover;
+  border-radius:10px;
+}
+.scorer-name{font-size:12px;font-weight:600;margin-top:6px}
+.scorer-team{font-size:10px;color:#9ca3af}
+.scorer-goals{font-size:16px;font-weight:700;color:#22c55e}
+
+button{
+  margin:12px auto 0;
+  display:block;
+  padding:6px 14px;
+  border-radius:999px;
+  border:1px solid #334155;
+  background:#020617;
+  color:#e5e7eb;
+  font-size:12px;
+  cursor:pointer;
+}
+
+/* modal */
+.modal{
+  position:fixed;inset:0;
+  background:rgba(15,23,42,.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:50;
+}
+.modal-box{
+  background:#0b1220;
+  border-radius:16px;
+  padding:18px;
+  width:90%;
+  max-width:360px;
+}
+.scorer-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:8px 0;
+}
+.scorer-row img{
+  width:42px;height:42px;border-radius:50%;object-fit:cover
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+<h1>Points Table</h1>
+
+<table id="table">
+<thead>
+<tr>
+<th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th>
+<th>GF</th><th>GA</th><th>GD</th><th>PTS</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<h2 style="margin:18px 0 10px;font-size:16px">Top Scorers</h2>
+<div id="topScorers" class="scorer-grid"></div>
+
+<button onclick="openAllScorers()">See all scorers</button>
+
+</div>
+
+<!-- ALL SCORERS MODAL -->
+<div class="modal" id="allScorersModal">
+  <div class="modal-box">
+    <h3 style="margin-bottom:8px">All Goal Scorers</h3>
+    <div id="allScorersList"></div>
+    <button onclick="closeAllScorers()">Close</button>
+  </div>
+</div>
+
+<script>
+const FIXTURES_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=148203374&single=true&output=csv';
+
+const RESULTS_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1925711967&single=true&output=csv';
+
+const SCORERS_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=695970577&single=true&output=csv';
+
+const PLAYERS_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1639912807&single=true&output=csv';
+
+function driveThumb(url){
+  const m = url?.match(/[?&]id=([a-zA-Z0-9_-]{10,})|\/d\/([a-zA-Z0-9_-]{10,})/);
+  const id = m ? (m[1]||m[2]) : null;
+  return id
+    ? `https://drive.google.com/thumbnail?id=${id}&sz=w240-h240`
+    : 'https://via.placeholder.com/200x200?text=No+Image';
+}
+
+let totals={}, playerMap={};
+
+Promise.all([
+  fetch(FIXTURES_CSV).then(r=>r.text()),
+  fetch(RESULTS_CSV).then(r=>r.text()),
+  fetch(SCORERS_CSV).then(r=>r.text()),
+  fetch(PLAYERS_CSV).then(r=>r.text())
+]).then(([fCsv,rCsv,sCsv,pCsv])=>{
+
+const fixtures=Papa.parse(fCsv,{header:true}).data;
+const results=Papa.parse(rCsv,{header:true}).data;
+const scorers=Papa.parse(sCsv,{header:true}).data;
+const players=Papa.parse(pCsv,{header:true}).data;
+
+players.forEach(p=>{
+  playerMap[p['Player ID'].trim()] = {
+    name:p['Player Name'].trim(),
+    team:p['Team ID'].trim(),
+    image:driveThumb(p['Player Image'])
+  };
+});
+
+const resultMap={};
+results.forEach(r=>resultMap[r['Match ID']]=r);
+
+const table={};
+fixtures.forEach(m=>{
+  if(m['Status']!=='Completed')return;
+  const r=resultMap[m['Match ID']];
+  if(!r)return;
+
+  const A=m['Team A'],B=m['Team B'];
+  const gA=+r['Team A Goals'],gB=+r['Team B Goals'];
+
+  [A,B].forEach(t=>{
+    if(!table[t])table[t]={Team:t,P:0,W:0,D:0,L:0,GF:0,GA:0,PTS:0};
+  });
+
+  table[A].P++;table[B].P++;
+  table[A].GF+=gA;table[A].GA+=gB;
+  table[B].GF+=gB;table[B].GA+=gA;
+
+  if(gA>gB){table[A].W++;table[A].PTS+=3;table[B].L++}
+  else if(gA<gB){table[B].W++;table[B].PTS+=3;table[A].L++}
+  else{table[A].D++;table[B].D++;table[A].PTS++;table[B].PTS++}
+});
+
+Object.values(table)
+.map(t=>({...t,GD:t.GF-t.GA}))
+.sort((a,b)=>b.PTS-a.PTS||b.GD-a.GD||b.GF-a.GF)
+.forEach(r=>{
+document.querySelector('#table tbody').innerHTML+=`
+<tr>
+<td class="team">${r.Team}</td>
+<td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+<td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.PTS}</td>
+</tr>`;
+});
+
+scorers.forEach(s=>{
+  totals[s['Player ID']] = (totals[s['Player ID']]||0)+Number(s['Goals']||0);
+});
+
+const top3=Object.keys(totals)
+.map(id=>({...playerMap[id],goals:totals[id]}))
+.sort((a,b)=>b.goals-a.goals)
+.slice(0,3);
+
+const box=document.getElementById('topScorers');
+top3.forEach(p=>{
+box.innerHTML+=`
+<div class="scorer-card">
+<img src="${p.image}" onerror="this.src='https://via.placeholder.com/150'">
+<div class="scorer-name">${p.name}</div>
+<div class="scorer-team">Team ${p.team}</div>
+<div class="scorer-goals">${p.goals}</div>
+</div>`;
+});
+});
+
+function openAllScorers(){
+const list=document.getElementById('allScorersList');
+list.innerHTML='';
+Object.keys(totals)
+.map(id=>({...playerMap[id],goals:totals[id]}))
+.sort((a,b)=>b.goals-a.goals)
+.forEach(p=>{
+list.innerHTML+=`
+<div class="scorer-row">
+<img src="${p.image}" onerror="this.src='https://via.placeholder.com/100'">
+<div style="flex:1">
+<div>${p.name}</div>
+<div style="font-size:11px;color:#9ca3af">Team ${p.team}</div>
+</div>
+<div style="font-weight:700">${p.goals}</div>
+</div>`;
+});
+document.getElementById('allScorersModal').style.display='flex';
+}
+function closeAllScorers(){
+document.getElementById('allScorersModal').style.display='none';
+}
+</script>
+</body>
+</html>
