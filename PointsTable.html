@@ -92,6 +92,13 @@ button{
 .scorer-row img{
   width:42px;height:42px;border-radius:50%;object-fit:cover
 }
+.empty{
+  padding:14px;
+  text-align:center;
+  color:#9ca3af;
+  border:1px dashed #334155;
+  border-radius:12px;
+}
 </style>
 </head>
 
@@ -161,14 +168,17 @@ const results=Papa.parse(rCsv,{header:true}).data;
 const scorers=Papa.parse(sCsv,{header:true}).data;
 const players=Papa.parse(pCsv,{header:true}).data;
 
+/* PLAYER MAP */
 players.forEach(p=>{
+  if(!p['Player ID']) return;
   playerMap[p['Player ID'].trim()] = {
-    name:p['Player Name'].trim(),
-    team:p['Team ID'].trim(),
+    name:(p['Player Name']||'').trim(),
+    team:(p['Team ID']||'').trim(),
     image:driveThumb(p['Player Image'])
   };
 });
 
+/* POINTS TABLE */
 const resultMap={};
 results.forEach(r=>resultMap[r['Match ID']]=r);
 
@@ -194,19 +204,32 @@ fixtures.forEach(m=>{
   else{table[A].D++;table[B].D++;table[A].PTS++;table[B].PTS++}
 });
 
-Object.values(table)
-.map(t=>({...t,GD:t.GF-t.GA}))
-.sort((a,b)=>b.PTS-a.PTS||b.GD-a.GD||b.GF-a.GF)
-.forEach(r=>{
-document.querySelector('#table tbody').innerHTML+=`
-<tr>
-<td class="team">${r.Team}</td>
-<td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
-<td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.PTS}</td>
-</tr>`;
-});
+const rows = Object.values(table)
+  .map(t=>({...t,GD:t.GF-t.GA}))
+  .sort((a,b)=>b.PTS-a.PTS||b.GD-a.GD||b.GF-a.GF);
 
+const tbody=document.querySelector('#table tbody');
+tbody.innerHTML='';
+
+if(rows.length===0){
+  tbody.innerHTML=`
+    <tr>
+      <td colspan="9" class="empty">No completed matches yet</td>
+    </tr>`;
+}else{
+  rows.forEach(r=>{
+    tbody.innerHTML+=`
+    <tr>
+      <td class="team">${r.Team}</td>
+      <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.PTS}</td>
+    </tr>`;
+  });
+}
+
+/* TOP SCORERS */
 scorers.forEach(s=>{
+  if(!s['Player ID'])return;
   totals[s['Player ID']] = (totals[s['Player ID']]||0)+Number(s['Goals']||0);
 });
 
@@ -216,20 +239,30 @@ const top3=Object.keys(totals)
 .slice(0,3);
 
 const box=document.getElementById('topScorers');
-top3.forEach(p=>{
-box.innerHTML+=`
-<div class="scorer-card">
-<img src="${p.image}" onerror="this.src='https://via.placeholder.com/150'">
-<div class="scorer-name">${p.name}</div>
-<div class="scorer-team">Team ${p.team}</div>
-<div class="scorer-goals">${p.goals}</div>
-</div>`;
-});
+box.innerHTML='';
+
+if(top3.length===0){
+  box.innerHTML=`<div class="empty" style="grid-column:1/-1">No goals scored yet</div>`;
+}else{
+  top3.forEach(p=>{
+    box.innerHTML+=`
+    <div class="scorer-card">
+      <img src="${p.image}" onerror="this.src='https://via.placeholder.com/150'">
+      <div class="scorer-name">${p.name}</div>
+      <div class="scorer-team">Team ${p.team}</div>
+      <div class="scorer-goals">${p.goals}</div>
+    </div>`;
+  });
+}
 });
 
+/* MODAL */
 function openAllScorers(){
 const list=document.getElementById('allScorersList');
 list.innerHTML='';
+if(Object.keys(totals).length===0){
+  list.innerHTML='<p class="empty">No goals recorded yet</p>';
+}else{
 Object.keys(totals)
 .map(id=>({...playerMap[id],goals:totals[id]}))
 .sort((a,b)=>b.goals-a.goals)
@@ -244,6 +277,7 @@ list.innerHTML+=`
 <div style="font-weight:700">${p.goals}</div>
 </div>`;
 });
+}
 document.getElementById('allScorersModal').style.display='flex';
 }
 function closeAllScorers(){
