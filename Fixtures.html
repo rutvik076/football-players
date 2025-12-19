@@ -9,148 +9,95 @@
 
   <style>
     :root {
-      --bg: #020617;
-      --card: #0b1220;
-      --accent: #22c55e;
-      --accent-soft: rgba(34,197,94,0.16);
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --border-subtle: rgba(148,163,184,0.45);
+      --bg:#020617; --card:#0b1220; --accent:#22c55e;
+      --accent-soft:rgba(34,197,94,.16);
+      --text-main:#e5e7eb; --text-muted:#9ca3af;
+      --border-subtle:rgba(148,163,184,.45);
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: "Poppins", sans-serif;
-      background: radial-gradient(circle at top, #1f2937, #020617 60%);
-      color: var(--text-main);
-      padding: 16px;
-      min-height: 100vh;
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Poppins,sans-serif;
+      background:radial-gradient(circle at top,#1f2937,#020617 60%);
+      color:var(--text-main);
+      padding:16px;
+      min-height:100vh;
     }
-
-    .page {
-      max-width: 480px;
-      margin: 0 auto;
+    .page{max-width:480px;margin:auto}
+    .header h1{font-size:22px;font-weight:700}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 10px;border-radius:999px;
+      border:1px solid var(--border-subtle);
+      font-size:10px;text-transform:uppercase;
+      margin-top:8px;color:var(--text-muted)
     }
-
-    .header {
-      margin-bottom: 20px;
+    .pill span{
+      width:6px;height:6px;border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 0 0 4px var(--accent-soft)
     }
-
-    .header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+    .section-title{margin:16px 0 10px;font-size:13px;color:var(--text-muted)}
+    .fixture-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px
     }
-
-    .header p {
-      margin-top: 4px;
-      font-size: 12px;
-      color: var(--text-muted);
+    .fixture-card{
+      background:linear-gradient(135deg,#0f172a,#020617);
+      padding:16px 12px;border-radius:14px;
+      border:1px solid var(--border-subtle);
+      text-align:center;font-weight:600;
+      box-shadow:0 10px 20px rgba(15,23,42,.85);
+      cursor:pointer;
     }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.4);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-top: 10px;
-      color: var(--text-muted);
+    .fixture-card small{
+      display:block;margin-top:6px;
+      font-size:11px;color:var(--text-muted)
     }
-
-    .pill span {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px var(--accent-soft);
+    .modal{
+      position:fixed;inset:0;
+      background:rgba(15,23,42,.85);
+      display:none;justify-content:center;
+      align-items:center;z-index:20
     }
-
-    .section-title {
-      margin: 16px 0 10px;
-      font-size: 13px;
-      color: var(--text-muted);
+    .modal-box{
+      background:var(--card);
+      border-radius:16px;padding:20px;
+      border:1px solid var(--border-subtle);
+      width:90%;max-width:320px;text-align:center
     }
-
-    .fixture-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap: 12px;
+    .modal-box button{
+      margin-top:14px;padding:6px 14px;
+      border-radius:999px;
+      border:1px solid var(--border-subtle);
+      background:#020617;color:#fff
     }
+	.status {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
 
-    .fixture-card {
-      background: linear-gradient(135deg, #0f172a, #020617);
-      padding: 18px 14px;
-      border-radius: 14px;
-      border: 1px solid var(--border-subtle);
-      text-align: center;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-main);
-      box-shadow: 0 10px 20px rgba(15,23,42,0.85);
-      cursor: pointer;
-      transition: transform .15s ease, border-color .15s ease;
-    }
+.status.scheduled {
+  color: #fde68a;
+  background: rgba(234,179,8,0.15);
+  border: 1px solid rgba(234,179,8,0.4);
+}
 
-    .fixture-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(34,197,94,0.7);
-    }
-
-    .fixture-card small {
-      display: block;
-      margin-top: 6px;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    /* Modal */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,23,42,0.85);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-    }
-
-    .modal-box {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 22px 20px;
-      border: 1px solid var(--border-subtle);
-      text-align: center;
-      width: 90%;
-      max-width: 320px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-    }
-
-    .modal-box h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-
-    .modal-box p {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .modal-box button {
-      margin-top: 14px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: rgba(15,23,42,0.9);
-      color: var(--text-main);
-      font-size: 12px;
-      cursor: pointer;
-    }
+.status.completed {
+  color: #86efac;
+  background: rgba(34,197,94,0.18);
+  border: 1px solid rgba(34,197,94,0.5);
+}
+.teams-score{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.05em;
+}
   </style>
 </head>
 
@@ -158,38 +105,133 @@
 <div class="page">
   <div class="header">
     <h1>Fixtures</h1>
-    <div class="pill"><span></span>Coming Soon</div>
+    <div class="pill"><span></span>Live schedule</div>
   </div>
 
   <div class="section-title">Schedule & Matchups</div>
-
-  <div class="fixture-grid">
-    <div class="fixture-card" onclick="openModal()">
-      Tournament Fixtures
-      <small>matches & schedule</small>
-    </div>
-  </div>
+  <div class="fixture-grid" id="fixtures">Loading…</div>
 </div>
 
-<!-- Popup -->
-<div class="modal" id="fixtureModal">
+<!-- Modal -->
+<div class="modal" id="modal">
   <div class="modal-box">
-    <h3>Fixtures Coming Soon</h3>
-    <p>
-      Match schedules and team matchups will be announced shortly.
-    </p>
+    <h3 id="modalTitle"></h3>
+    <p id="modalInfo"></p>
     <button onclick="closeModal()">Close</button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-function openModal() {
-  document.getElementById('fixtureModal').style.display = 'flex';
+/* 🔁 REPLACE WITH YOUR FIXTURES CSV URL */
+const FIXTURES_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=148203374&single=true&output=csv';
+const RESULTS_CSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1925711967&single=true&output=csv';
+const SCORERS_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=695970577&single=true&output=csv';
+
+const PLAYERS_CSV =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1639912807&single=true&output=csv';
+
+
+let scorers = [];
+let playerMap = {};
+
+Promise.all([
+  fetch(FIXTURES_CSV).then(r=>r.text()),
+  fetch(RESULTS_CSV).then(r=>r.text()),
+  fetch(SCORERS_CSV).then(r=>r.text()),
+  fetch(PLAYERS_CSV).then(r=>r.text())
+]).then(([fCsv, rCsv, sCsv, pCsv]) => {
+
+
+  const fixtures = Papa.parse(fCsv,{header:true}).data;
+  const results  = Papa.parse(rCsv,{header:true}).data;
+  scorers = Papa.parse(sCsv,{header:true}).data;
+  const players = Papa.parse(pCsv,{header:true}).data;
+
+playerMap = {};
+players.forEach(p=>{
+  playerMap[p['Player ID']] = {
+    name: p['Player Name'],
+    team: p['Team ID']
+  };
+});
+
+  const resultMap = {};
+  results.forEach(r=>{
+    resultMap[r['Match ID']] = r;
+  });
+
+  const grid = document.getElementById('fixtures');
+  grid.innerHTML = '';
+
+  fixtures.forEach(m=>{
+    if(!m['Team A']) return;
+
+    const res = resultMap[m['Match ID']];
+    const isDone = m['Status']==='Completed';
+
+    const score = isDone && res
+  ? `${m['Team A']}(${res['Team A Goals']}) - (${res['Team B Goals']})${m['Team B']}`
+  : `${m['Team A']} vs ${m['Team B']}`;
+
+
+    const card = document.createElement('div');
+    card.className='fixture-card';
+    card.innerHTML = `
+  <div class="teams-score">${score}</div>
+  <small>${m['Date']} • ${m['Start Time']}</small>
+  <div class="status ${m['Status'].toLowerCase()}">${m['Status']}</div>
+`;
+
+
+    card.onclick = ()=>openModal(m,res);
+    grid.appendChild(card);
+  });
+});
+
+function openModal(m,res){
+  let html = `
+    <div style="font-size:22px;font-weight:700;margin-bottom:6px">
+      ${m['Team A']}(${res?.['Team A Goals']||0})
+      -
+      (${res?.['Team B Goals']||0})${m['Team B']}
+    </div>
+    <div style="font-size:12px;color:#9ca3af">
+      ${m['Date']} • ${m['Start Time']}
+    </div>
+    <hr style="margin:10px 0;border-color:#334155">
+  `;
+
+  const matchScorers = scorers.filter(s => s['Match ID'] === m['Match ID']);
+
+if(matchScorers.length === 0){
+  html += `<p style="color:#9ca3af">No goals recorded</p>`;
+} else {
+  html += `<h4>Goal Scorers</h4>`;
+  matchScorers.forEach(s=>{
+    const player = playerMap[s['Player ID']];
+    if(!player) return;
+
+    html += `
+      <p>
+        ${player.name} (${player.team})
+        × ${s['Goals']}
+      </p>`;
+  });
+  }
+
+  document.getElementById('modalTitle').textContent =
+    `${m['Team A']} vs ${m['Team B']}`;
+  document.getElementById('modalInfo').innerHTML = html;
+  document.getElementById('modal').style.display='flex';
 }
-function closeModal() {
-  document.getElementById('fixtureModal').style.display = 'none';
+
+
+function closeModal(){
+  document.getElementById('modal').style.display='none';
 }
 </script>
-
 </body>
 </html>
