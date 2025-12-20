@@ -71,6 +71,10 @@ body{
   padding:14px;
   box-shadow:0 10px 20px rgba(15,23,42,.85);
   cursor:pointer;
+  transition:transform 0.2s;
+}
+.fixture-card:hover{
+  transform:translateY(-2px);
 }
 .teams-score{
   font-size:18px;
@@ -102,26 +106,40 @@ body{
 /* MODAL */
 .modal{
   position:fixed;inset:0;
-  background:rgba(15,23,42,.85);
+  background:rgba(15,23,42,.9);
   display:none;
   justify-content:center;
   align-items:center;
   z-index:50;
 }
+.modal.show{
+  display:flex;
+}
 .modal-box{
   background:var(--card);
+  border:1px solid var(--border);
   border-radius:16px;
-  padding:18px;
+  padding:20px;
   width:90%;
-  max-width:340px;
+  max-width:400px;
+  position:relative;
+}
+.modal-box h3{
+  font-size:18px;
+  margin-bottom:12px;
 }
 .modal-box button{
-  margin-top:12px;
-  padding:6px 14px;
+  margin-top:16px;
+  padding:8px 20px;
   border-radius:999px;
   border:1px solid var(--border);
   background:#020617;
   color:#fff;
+  cursor:pointer;
+  font-family:Poppins,sans-serif;
+}
+.modal-box button:hover{
+  background:#1f2937;
 }
 </style>
 </head>
@@ -138,15 +156,17 @@ body{
 </div>
 
 <!-- MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modalTitle"></h3>
+<div class="modal" id="modal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3 id="modalTitle">Match Details</h3>
     <div id="modalInfo"></div>
     <button onclick="closeModal()">Close</button>
   </div>
 </div>
 
 <script>
+console.log('Script started');
+
 const FIXTURES_CSV =
 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1634159170&single=true&output=csv';
 
@@ -161,85 +181,143 @@ const PLAYERS_CSV =
 
 let scorers=[], playerMap={}, resultMap={};
 
+console.log('Papa:', typeof Papa);
+
+// Helper function to trim all keys in objects
+function trimKeys(arr) {
+  return arr.map(obj => {
+    const trimmed = {};
+    Object.keys(obj).forEach(key => {
+      trimmed[key.trim()] = typeof obj[key] === 'string' ? obj[key].trim() : obj[key];
+    });
+    return trimmed;
+  });
+}
+
 Promise.all([
   fetch(FIXTURES_CSV).then(r=>r.text()),
   fetch(RESULTS_CSV).then(r=>r.text()),
   fetch(SCORERS_CSV).then(r=>r.text()),
   fetch(PLAYERS_CSV).then(r=>r.text())
 ]).then(([fCsv,rCsv,sCsv,pCsv])=>{
+  console.log('Data loaded successfully');
 
-const fixtures=Papa.parse(fCsv,{header:true}).data;
-const results=Papa.parse(rCsv,{header:true}).data;
-scorers=Papa.parse(sCsv,{header:true}).data;
-const players=Papa.parse(pCsv,{header:true}).data;
+  const fixtures=trimKeys(Papa.parse(fCsv,{header:true,skipEmptyLines:true}).data);
+  const results=trimKeys(Papa.parse(rCsv,{header:true,skipEmptyLines:true}).data);
+  scorers=trimKeys(Papa.parse(sCsv,{header:true,skipEmptyLines:true}).data);
+  const players=trimKeys(Papa.parse(pCsv,{header:true,skipEmptyLines:true}).data);
 
-players.forEach(p=>{
-  playerMap[p['Player ID']]={name:p['Player Name'],team:p['Team ID']};
-});
-results.forEach(r=>resultMap[r['Match ID']]=r);
+  console.log('Fixtures count:', fixtures.length);
+  console.log('First fixture:', fixtures[0]);
+  console.log('First scorer:', scorers[0]);
+  console.log('First player:', players[0]);
 
-const root=document.getElementById('fixtures');
-root.innerHTML='';
-
-const sections=[
-  {t:'Pool A – League', f:m=>m.Stage==='League'&&m.Pool==='Pool A'},
-  {t:'Pool B – League', f:m=>m.Stage==='League'&&m.Pool==='Pool B'},
-  {t:'Semi Finals', f:m=>m.Stage==='Semi Final'},
-  {t:'Final', f:m=>m.Stage==='Final'}
-];
-
-sections.forEach(sec=>{
-  const list=fixtures.filter(sec.f);
-  if(!list.length)return;
-
-  root.innerHTML+=`<div class="section-title">${sec.t}</div>`;
-  const grid=document.createElement('div');
-  grid.className='fixture-grid';
-
-  list.forEach(m=>{
-    const r=resultMap[m['Match ID']];
-    const done=m.Status==='Completed';
-    const score=done&&r
-      ? `${m['Team A']}(${r['Team A Goals']}) - (${r['Team B Goals']})${m['Team B']}`
-      : `${m['Team A']} vs ${m['Team B']}`;
-
-    const c=document.createElement('div');
-    c.className='fixture-card';
-    c.innerHTML=`
-      <div class="teams-score">${score}</div>
-      <div class="fixture-meta">${m.Date} • ${m['Start Time']}</div>
-      <div class="status ${m.Status.toLowerCase()}">${m.Status}</div>`;
-    c.onclick=()=>openModal(m,r);
-    grid.appendChild(c);
+  players.forEach(p=>{
+    if(p['Player ID']) {
+      playerMap[p['Player ID']]={name:p['Player Name'],team:p['Team ID']};
+    }
+  });
+  
+  results.forEach(r=>{
+    if(r['Match ID']) {
+      resultMap[r['Match ID']]=r;
+    }
   });
 
-  root.appendChild(grid);
-});
+  const root=document.getElementById('fixtures');
+  root.innerHTML='';
+
+  const sections=[
+    {t:'Pool A – League', f:m=>m.Stage==='League'&&m.Pool==='Pool A'},
+    {t:'Pool B – League', f:m=>m.Stage==='League'&&m.Pool==='Pool B'},
+    {t:'Semi Finals', f:m=>m.Stage==='Semi Final'},
+    {t:'Final', f:m=>m.Stage==='Final'}
+  ];
+
+  sections.forEach(sec=>{
+    const list=fixtures.filter(sec.f);
+    console.log('Section:', sec.t, 'Count:', list.length);
+    if(!list.length)return;
+
+    const sectionTitle=document.createElement('div');
+    sectionTitle.className='section-title';
+    sectionTitle.textContent=sec.t;
+    root.appendChild(sectionTitle);
+
+    const grid=document.createElement('div');
+    grid.className='fixture-grid';
+
+    list.forEach(m=>{
+      const r=resultMap[m['Match ID']];
+      const done=m.Status==='Completed';
+      const score=done&&r
+        ? `${m['Team A']} (${r['Team A Goals']}) - (${r['Team B Goals']}) ${m['Team B']}`
+        : `${m['Team A']} vs ${m['Team B']}`;
+
+      const c=document.createElement('div');
+      c.className='fixture-card';
+      c.innerHTML=`
+        <div class="teams-score">${score}</div>
+        <div class="fixture-meta">${m.Date} • ${m['Start Time']}</div>
+        <div class="status ${m.Status.toLowerCase()}">${m.Status}</div>`;
+      
+      c.addEventListener('click', function() {
+        console.log('Card clicked!', m['Team A'], 'vs', m['Team B']);
+        openModal(m,r);
+      });
+      
+      grid.appendChild(c);
+    });
+
+    root.appendChild(grid);
+  });
+  
+  console.log('Cards rendered');
+}).catch(err=>{
+  console.error('Error loading data:', err);
+  document.getElementById('fixtures').innerHTML='<p style="color:red">Error loading data. Check console.</p>';
 });
 
 function openModal(m,r){
-let html=`
-<div style="font-size:20px;font-weight:700">
-${m['Team A']}(${r?.['Team A Goals']||0}) - (${r?.['Team B Goals']||0})${m['Team B']}
+  console.log('Opening modal for:', m['Team A'], 'vs', m['Team B']);
+  console.log('Match data:', m);
+  console.log('Result data:', r);
+  
+  let html=`
+<div style="font-size:20px;font-weight:700;margin-bottom:8px">
+${m['Team A']} (${r?.['Team A Goals']||0}) - (${r?.['Team B Goals']||0}) ${m['Team B']}
 </div>
-<div style="font-size:12px;color:#9ca3af">${m.Date} • ${m['Start Time']}</div>
-<hr style="margin:8px 0;border-color:#334155">`;
+<div style="font-size:12px;color:#9ca3af;margin-bottom:12px">${m.Date} • ${m['Start Time']}</div>
+<hr style="margin:12px 0;border:none;border-top:1px solid #334155">`;
 
-const ms=scorers.filter(s=>s['Match ID']===m['Match ID']);
-if(!ms.length) html+=`<p style="color:#9ca3af">No goals recorded</p>`;
-else{
-  html+=`<h4>Goal Scorers</h4>`;
-  ms.forEach(s=>{
-    const p=playerMap[s['Player ID']];
-    if(p) html+=`<p>${p.name} (${p.team}) × ${s.Goals}</p>`;
-  });
+  const ms=scorers.filter(s=>s['Match ID']===m['Match ID']);
+  console.log('Matching scorers:', ms);
+  console.log('Player map:', playerMap);
+  
+  if(!ms.length) {
+    html+=`<p style="color:#9ca3af;margin-top:12px">No goals recorded</p>`;
+  } else {
+    html+=`<h4 style="margin-top:12px;margin-bottom:8px;font-size:14px">Goal Scorers</h4>`;
+    ms.forEach(s=>{
+      console.log('Scorer:', s);
+      const p=playerMap[s['Player ID']];
+      console.log('Player found:', p);
+      if(p) {
+        html+=`<p style="margin:6px 0">${p.name} (${p.team}) × ${s.Goals}</p>`;
+      } else {
+        html+=`<p style="margin:6px 0;color:#ef4444">Unknown Player (ID: ${s['Player ID']}) × ${s.Goals}</p>`;
+      }
+    });
+  }
+
+  document.getElementById('modalInfo').innerHTML=html;
+  document.getElementById('modal').classList.add('show');
 }
 
-modalTitle.textContent=`${m['Team A']} vs ${m['Team B']}`;
-modalInfo.innerHTML=html;
-modal.style.display='flex';
+function closeModal(){
+  console.log('Closing modal');
+  document.getElementById('modal').classList.remove('show');
 }
-function closeModal(){modal.style.display='none'}
 </script>
 
 </body>
