@@ -18,6 +18,17 @@ body{
 .page{max-width:480px;margin:auto}
 h1{font-size:22px;margin-bottom:10px}
 
+/* pool */
+.pool{margin-top:22px}
+.pool h2{
+  font-size:14px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#9ca3af;
+  margin-bottom:8px;
+}
+
+/* table */
 table{
   width:100%;
   border-collapse:collapse;
@@ -26,18 +37,52 @@ table{
 th,td{
   padding:8px 6px;
   text-align:center;
-  border-bottom:1px solid rgba(148,163,184,.3);
+  border-bottom:1px solid rgba(148,163,184,.25);
 }
 th{color:#9ca3af}
 .team{text-align:left;font-weight:600}
-tr:nth-child(1),tr:nth-child(2){background:rgba(34,197,94,.08)}
+tr.qualified{background:rgba(34,197,94,.12)}
 
+/* badges */
+.badge{
+  font-size:10px;
+  padding:2px 6px;
+  border-radius:999px;
+  margin-left:6px;
+}
+.badge.rank{border:1px solid #334155}
+.badge.qual{
+  background:rgba(34,197,94,.2);
+  color:#86efac;
+}
+
+/* empty */
+.empty{
+  padding:14px;
+  text-align:center;
+  color:#9ca3af;
+  border:1px dashed #334155;
+  border-radius:12px;
+}
+
+/* semifinals */
+.semi-box{
+  margin-top:24px;
+  padding:14px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#0f172a,#020617);
+  border:1px solid rgba(148,163,184,.35);
+}
+.semi-box h3{font-size:14px;margin-bottom:8px}
+.semi-match{font-size:13px;font-weight:600;margin:6px 0}
+
+/* scorers */
 .scorer-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
+  margin-top:10px;
 }
-
 .scorer-card{
   background:linear-gradient(135deg,#0f172a,#020617);
   border:1px solid rgba(148,163,184,.35);
@@ -66,6 +111,9 @@ button{
   font-size:12px;
   cursor:pointer;
 }
+button:hover{
+  background:#1f2937;
+}
 
 /* modal */
 .modal{
@@ -92,13 +140,6 @@ button{
 .scorer-row img{
   width:42px;height:42px;border-radius:50%;object-fit:cover
 }
-.empty{
-  padding:14px;
-  text-align:center;
-  color:#9ca3af;
-  border:1px dashed #334155;
-  border-radius:12px;
-}
 </style>
 </head>
 
@@ -107,35 +148,50 @@ button{
 
 <h1>Points Table</h1>
 
-<table id="table">
-<thead>
-<tr>
-<th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th>
-<th>GF</th><th>GA</th><th>GD</th><th>PTS</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+<div id="tables"></div>
 
-<h2 style="margin:18px 0 10px;font-size:16px">Top Scorers</h2>
+<div id="semifinals" class="semi-box" style="display:none">
+  <h3>Semi Finals</h3>
+  <div id="sf1" class="semi-match"></div>
+  <div id="sf2" class="semi-match"></div>
+</div>
+
+<div id="semiResults" class="semi-box" style="display:none">
+  <h3>Semi Final Results</h3>
+  <div id="sfr1" class="semi-match"></div>
+  <div id="sfr2" class="semi-match"></div>
+</div>
+
+<div id="finalMatch" class="semi-box" style="display:none">
+  <h3>Final</h3>
+  <div id="finalDetails" class="semi-match"></div>
+</div>
+
+<div id="champion" class="semi-box" style="display:none;text-align:center;background:linear-gradient(135deg,#22c55e,#16a34a);border-color:#22c55e">
+  <h3 style="font-size:18px;margin-bottom:8px">🏆 Tournament Champion 🏆</h3>
+  <div id="championTeam" style="font-size:24px;font-weight:700"></div>
+</div>
+
+<h2 style="margin:20px 0 10px;font-size:16px">Top Scorers</h2>
 <div id="topScorers" class="scorer-grid"></div>
-
 <button onclick="openAllScorers()">See all scorers</button>
 
 </div>
 
-<!-- ALL SCORERS MODAL -->
-<div class="modal" id="allScorersModal">
-  <div class="modal-box">
-    <h3 style="margin-bottom:8px">All Goal Scorers</h3>
+<!-- MODAL -->
+<div class="modal" id="allScorersModal" onclick="closeAllScorers()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>All Goal Scorers</h3>
     <div id="allScorersList"></div>
     <button onclick="closeAllScorers()">Close</button>
   </div>
 </div>
 
 <script>
+console.log('Script started');
+
 const FIXTURES_CSV =
-'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=148203374&single=true&output=csv';
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1634159170&single=true&output=csv';
 
 const RESULTS_CSV =
 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1925711967&single=true&output=csv';
@@ -147,11 +203,22 @@ const PLAYERS_CSV =
 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDj6H_iXEcpkOJ6PxDdDXEU2I-nWYWiXAYK9EFCGmgh49urC7vJv_RroGbND3DBFBUFhlQ7yNbGSra/pub?gid=1639912807&single=true&output=csv';
 
 function driveThumb(url){
-  const m = url?.match(/[?&]id=([a-zA-Z0-9_-]{10,})|\/d\/([a-zA-Z0-9_-]{10,})/);
-  const id = m ? (m[1]||m[2]) : null;
+  const m=url?.match(/[?&]id=([a-zA-Z0-9_-]{10,})|\/d\/([a-zA-Z0-9_-]{10,})/);
+  const id=m?(m[1]||m[2]):null;
   return id
     ? `https://drive.google.com/thumbnail?id=${id}&sz=w240-h240`
     : 'https://via.placeholder.com/200x200?text=No+Image';
+}
+
+// Helper function to trim all keys in objects
+function trimKeys(arr) {
+  return arr.map(obj => {
+    const trimmed = {};
+    Object.keys(obj).forEach(key => {
+      trimmed[key.trim()] = typeof obj[key] === 'string' ? obj[key].trim() : obj[key];
+    });
+    return trimmed;
+  });
 }
 
 let totals={}, playerMap={};
@@ -162,126 +229,311 @@ Promise.all([
   fetch(SCORERS_CSV).then(r=>r.text()),
   fetch(PLAYERS_CSV).then(r=>r.text())
 ]).then(([fCsv,rCsv,sCsv,pCsv])=>{
+  console.log('Data loaded successfully');
 
-const fixtures=Papa.parse(fCsv,{header:true}).data;
-const results=Papa.parse(rCsv,{header:true}).data;
-const scorers=Papa.parse(sCsv,{header:true}).data;
-const players=Papa.parse(pCsv,{header:true}).data;
+  const fixtures=trimKeys(Papa.parse(fCsv,{header:true,skipEmptyLines:true}).data);
+  const results=trimKeys(Papa.parse(rCsv,{header:true,skipEmptyLines:true}).data);
+  const scorers=trimKeys(Papa.parse(sCsv,{header:true,skipEmptyLines:true}).data);
+  const players=trimKeys(Papa.parse(pCsv,{header:true,skipEmptyLines:true}).data);
 
-/* PLAYER MAP */
-players.forEach(p=>{
-  if(!p['Player ID']) return;
-  playerMap[p['Player ID'].trim()] = {
-    name:(p['Player Name']||'').trim(),
-    team:(p['Team ID']||'').trim(),
-    image:driveThumb(p['Player Image'])
-  };
-});
-
-/* POINTS TABLE */
-const resultMap={};
-results.forEach(r=>resultMap[r['Match ID']]=r);
-
-const table={};
-fixtures.forEach(m=>{
-  if(m['Status']!=='Completed')return;
-  const r=resultMap[m['Match ID']];
-  if(!r)return;
-
-  const A=m['Team A'],B=m['Team B'];
-  const gA=+r['Team A Goals'],gB=+r['Team B Goals'];
-
-  [A,B].forEach(t=>{
-    if(!table[t])table[t]={Team:t,P:0,W:0,D:0,L:0,GF:0,GA:0,PTS:0};
+  console.log('Parsed data counts:', {
+    fixtures: fixtures.length,
+    results: results.length,
+    scorers: scorers.length,
+    players: players.length
   });
 
-  table[A].P++;table[B].P++;
-  table[A].GF+=gA;table[A].GA+=gB;
-  table[B].GF+=gB;table[B].GA+=gA;
-
-  if(gA>gB){table[A].W++;table[A].PTS+=3;table[B].L++}
-  else if(gA<gB){table[B].W++;table[B].PTS+=3;table[A].L++}
-  else{table[A].D++;table[B].D++;table[A].PTS++;table[B].PTS++}
-});
-
-const rows = Object.values(table)
-  .map(t=>({...t,GD:t.GF-t.GA}))
-  .sort((a,b)=>b.PTS-a.PTS||b.GD-a.GD||b.GF-a.GF);
-
-const tbody=document.querySelector('#table tbody');
-tbody.innerHTML='';
-
-if(rows.length===0){
-  tbody.innerHTML=`
-    <tr>
-      <td colspan="9" class="empty">No completed matches yet</td>
-    </tr>`;
-}else{
-  rows.forEach(r=>{
-    tbody.innerHTML+=`
-    <tr>
-      <td class="team">${r.Team}</td>
-      <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
-      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.PTS}</td>
-    </tr>`;
+  /* player map */
+  players.forEach(p=>{
+    if(!p['Player ID'])return;
+    playerMap[p['Player ID']] = {
+      name:p['Player Name'],
+      team:p['Team ID'],
+      image:driveThumb(p['Player Image'])
+    };
   });
+
+  const leagueStatus = { 'Pool A': true, 'Pool B': true };
+
+  fixtures.forEach(m => {
+    if (m.Stage === 'League' && m.Status !== 'Completed') {
+      leagueStatus[m.Pool] = false;
+    }
+  });
+
+  /* pool tables */
+  const resultMap={};
+  results.forEach(r=>resultMap[r['Match ID']]=r);
+
+  console.log('Result Map:', resultMap);
+
+  const pools={'Pool A':{},'Pool B':{}};
+
+  fixtures.forEach(m=>{
+    if(m.Stage!=='League'||m.Status!=='Completed')return;
+    const r=resultMap[m['Match ID']];
+    if(!r)return;
+
+    const pool=m.Pool,A=m['Team A'],B=m['Team B'];
+    const gA=+r['Team A Goals'],gB=+r['Team B Goals'];
+
+    ;[A,B].forEach(t=>{
+      if(!pools[pool][t])
+        pools[pool][t]={Team:t,P:0,W:0,D:0,L:0,GF:0,GA:0,PTS:0};
+    });
+
+    pools[pool][A].P++;pools[pool][B].P++;
+    pools[pool][A].GF+=gA;pools[pool][A].GA+=gB;
+    pools[pool][B].GF+=gB;pools[pool][B].GA+=gA;
+
+    if(gA>gB){pools[pool][A].W++;pools[pool][A].PTS+=3;pools[pool][B].L++}
+    else if(gA<gB){pools[pool][B].W++;pools[pool][B].PTS+=3;pools[pool][A].L++}
+    else{pools[pool][A].D++;pools[pool][B].D++;pools[pool][A].PTS++;pools[pool][B].PTS++}
+  });
+
+  /* render pools */
+  const tables=document.getElementById('tables');
+  let qualifiers={};
+
+  Object.keys(pools).forEach(pool=>{
+    const poolDiv = document.createElement('div');
+    poolDiv.className = 'pool';
+    poolDiv.innerHTML = `<h2>${pool}</h2>`;
+    tables.appendChild(poolDiv);
+
+    const rows=Object.values(pools[pool])
+      .map(t=>({...t,GD:t.GF-t.GA}))
+      .sort((a,b)=>b.PTS-a.PTS||b.GD-a.GD||b.GF-a.GF);
+
+    if(rows.length===0){
+      poolDiv.innerHTML+=`<div class="empty">No matches played yet</div>`;
+      return;
+    }
+
+    qualifiers[pool]=rows.slice(0,2);
+
+    let html=`<table><tbody>`;
+    rows.forEach((r,i)=>{
+      const label=pool==='Pool A'?(i===0?'A1':i===1?'A2':''):(i===0?'B1':i===1?'B2':'');
+      html+=`
+      <tr class="${i<2?'qualified':''}">
+        <td class="team">${r.Team}
+          ${label?`<span class="badge rank">${label}</span>`:''}
+          ${(i < 2 && leagueStatus[pool])
+    ? `<span class="badge qual">Qualified</span>`
+    : ''
 }
-
-/* TOP SCORERS */
-scorers.forEach(s=>{
-  if(!s['Player ID'])return;
-  totals[s['Player ID']] = (totals[s['Player ID']]||0)+Number(s['Goals']||0);
-});
-
-const top3=Object.keys(totals)
-.map(id=>({...playerMap[id],goals:totals[id]}))
-.sort((a,b)=>b.goals-a.goals)
-.slice(0,3);
-
-const box=document.getElementById('topScorers');
-box.innerHTML='';
-
-if(top3.length===0){
-  box.innerHTML=`<div class="empty" style="grid-column:1/-1">No goals scored yet</div>`;
-}else{
-  top3.forEach(p=>{
-    box.innerHTML+=`
-    <div class="scorer-card">
-      <img src="${p.image}" onerror="this.src='https://via.placeholder.com/150'">
-      <div class="scorer-name">${p.name}</div>
-      <div class="scorer-team">Team ${p.team}</div>
-      <div class="scorer-goals">${p.goals}</div>
-    </div>`;
+        </td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+        <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.PTS}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+    poolDiv.innerHTML+=html;
   });
-}
+
+  /* semifinals */
+  if(qualifiers['Pool A']&&qualifiers['Pool B']){
+    const A1 = qualifiers['Pool A'][0].Team;
+    const A2 = qualifiers['Pool A'][1].Team;
+    const B1 = qualifiers['Pool B'][0].Team;
+    const B2 = qualifiers['Pool B'][1].Team;
+    
+    console.log('Qualifiers:', {A1, A2, B1, B2});
+    console.log('All fixtures:', fixtures);
+    
+    const semiFixtures = fixtures.filter(m => m.Stage === 'Semi Final');
+    console.log('Semi final fixtures:', semiFixtures);
+    semiFixtures.forEach(sf => {
+      console.log('Semi match:', sf['Team A'], 'vs', sf['Team B'], '- Status:', sf.Status);
+    });
+    
+    // Find semi final matches - try direct lookup first
+    let sf1Match = semiFixtures.find(m => 
+      (m['Team A'] === A1 && m['Team B'] === B2) || (m['Team A'] === B2 && m['Team B'] === A1)
+    );
+    
+    let sf2Match = semiFixtures.find(m => 
+      (m['Team A'] === B1 && m['Team B'] === A2) || (m['Team A'] === A2 && m['Team B'] === B1)
+    );
+    
+    console.log('SF1 Match found by qualifiers:', sf1Match);
+    console.log('SF2 Match found by qualifiers:', sf2Match);
+    
+    // If not found, just assign the two semi finals in order
+    if(!sf1Match && !sf2Match && semiFixtures.length === 2) {
+      console.log('Using semi finals in order from fixtures');
+      sf1Match = semiFixtures[0];
+      sf2Match = semiFixtures[1];
+    }
+    
+    // Show semi final matchups
+    document.getElementById('semifinals').style.display='block';
+    
+    if(sf1Match && sf2Match) {
+      document.getElementById('sf1').textContent=`SF1: ${sf1Match['Team A']} vs ${sf1Match['Team B']}`;
+      document.getElementById('sf2').textContent=`SF2: ${sf2Match['Team A']} vs ${sf2Match['Team B']}`;
+    } else {
+      document.getElementById('sf1').textContent=`SF1: ${A1} (A1) vs ${B2} (B2)`;
+      document.getElementById('sf2').textContent=`SF2: ${B1} (B1) vs ${A2} (A2)`;
+    }
+    
+    // Check if semis are completed
+    let sf1Winner = null, sf2Winner = null;
+    
+    if(sf1Match) {
+      console.log('SF1 Status:', sf1Match.Status);
+      console.log('SF1 Match ID:', sf1Match['Match ID']);
+      console.log('SF1 Result:', resultMap[sf1Match['Match ID']]);
+    }
+    
+    if(sf1Match && sf1Match.Status === 'Completed') {
+      const sf1Result = resultMap[sf1Match['Match ID']];
+      if(sf1Result) {
+        const gA = +sf1Result['Team A Goals'];
+        const gB = +sf1Result['Team B Goals'];
+        sf1Winner = gA > gB ? sf1Match['Team A'] : sf1Match['Team B'];
+        const sf1Loser = gA > gB ? sf1Match['Team B'] : sf1Match['Team A'];
+        
+        console.log('SF1 Winner:', sf1Winner);
+        
+        document.getElementById('semiResults').style.display='block';
+        document.getElementById('sfr1').innerHTML=`
+          <strong>SF1:</strong> ${sf1Match['Team A']} (${gA}) - (${gB}) ${sf1Match['Team B']}
+          <div style="color:#22c55e;margin-top:6px;font-size:13px">
+            ✓ ${sf1Winner} won and advanced to the Final!
+          </div>
+          <div style="color:#9ca3af;font-size:11px;margin-top:2px">
+            ${sf1Loser} was eliminated
+          </div>
+        `;
+      }
+    }
+    
+    if(sf2Match && sf2Match.Status === 'Completed') {
+      const sf2Result = resultMap[sf2Match['Match ID']];
+      if(sf2Result) {
+        const gA = +sf2Result['Team A Goals'];
+        const gB = +sf2Result['Team B Goals'];
+        sf2Winner = gA > gB ? sf2Match['Team A'] : sf2Match['Team B'];
+        const sf2Loser = gA > gB ? sf2Match['Team B'] : sf2Match['Team A'];
+        
+        console.log('SF2 Winner:', sf2Winner);
+        
+        document.getElementById('semiResults').style.display='block';
+        document.getElementById('sfr2').innerHTML=`
+          <strong>SF2:</strong> ${sf2Match['Team A']} (${gA}) - (${gB}) ${sf2Match['Team B']}
+          <div style="color:#22c55e;margin-top:6px;font-size:13px">
+            ✓ ${sf2Winner} won and advanced to the Final!
+          </div>
+          <div style="color:#9ca3af;font-size:11px;margin-top:2px">
+            ${sf2Loser} was eliminated
+          </div>
+        `;
+      }
+    }
+    
+    // Check for final
+    if(sf1Winner && sf2Winner) {
+      // Look for any final match, regardless of team order
+      const finalMatch = fixtures.find(m => m.Stage === 'Final');
+      
+      console.log('SF1 Winner:', sf1Winner);
+      console.log('SF2 Winner:', sf2Winner);
+      console.log('Final Match found:', finalMatch);
+      
+      if(finalMatch) {
+        document.getElementById('finalMatch').style.display='block';
+        
+        if(finalMatch.Status === 'Completed') {
+          const finalResult = resultMap[finalMatch['Match ID']];
+          console.log('Final Result:', finalResult);
+          
+          if(finalResult) {
+            const gA = +finalResult['Team A Goals'];
+            const gB = +finalResult['Team B Goals'];
+            const champion = gA > gB ? finalMatch['Team A'] : finalMatch['Team B'];
+            const runnerUp = gA > gB ? finalMatch['Team B'] : finalMatch['Team A'];
+            
+            document.getElementById('finalDetails').innerHTML=`
+              <strong>Final:</strong> ${finalMatch['Team A']} (${gA}) - (${gB}) ${finalMatch['Team B']}
+              <div style="color:#22c55e;margin-top:8px;font-size:14px">
+                🎉 ${champion} won the final match and lifted the trophy! 🏆
+              </div>
+              <div style="color:#9ca3af;font-size:12px;margin-top:4px">
+                ${runnerUp} finished as runners-up
+              </div>
+            `;
+            
+            document.getElementById('champion').style.display='block';
+            document.getElementById('championTeam').textContent = champion;
+          }
+        } else {
+          document.getElementById('finalDetails').innerHTML=`
+            <strong>Final:</strong> ${finalMatch['Team A']} vs ${finalMatch['Team B']}
+            <div style="font-size:11px;color:#9ca3af;margin-top:4px">${finalMatch.Date} • ${finalMatch['Start Time']}</div>
+            <div style="color:#fbbf24;margin-top:6px;font-size:12px">⏳ Match scheduled</div>
+          `;
+        }
+      }
+    }
+  }
+
+  /* top scorers */
+  scorers.forEach(s=>{
+    totals[s['Player ID']] = (totals[s['Player ID']]||0)+Number(s['Goals']||0);
+  });
+
+  const top3=Object.keys(totals)
+  .map(id=>({...playerMap[id],goals:totals[id]}))
+  .sort((a,b)=>b.goals-a.goals)
+  .slice(0,3);
+
+  const box=document.getElementById('topScorers');
+  if(top3.length===0){
+    box.innerHTML=`<div class="empty" style="grid-column:1/-1">No goals scored yet</div>`;
+  }else{
+    top3.forEach(p=>{
+      box.innerHTML+=`
+      <div class="scorer-card">
+        <img src="${p.image}">
+        <div class="scorer-name">${p.name}</div>
+        <div class="scorer-team">Team ${p.team}</div>
+        <div class="scorer-goals">${p.goals}</div>
+      </div>`;
+    });
+  }
+}).catch(err=>{
+  console.error('Error loading data:', err);
+  document.getElementById('tables').innerHTML='<p style="color:red">Error loading data. Check console.</p>';
 });
 
-/* MODAL */
+/* modal */
 function openAllScorers(){
-const list=document.getElementById('allScorersList');
-list.innerHTML='';
-if(Object.keys(totals).length===0){
-  list.innerHTML='<p class="empty">No goals recorded yet</p>';
-}else{
-Object.keys(totals)
-.map(id=>({...playerMap[id],goals:totals[id]}))
-.sort((a,b)=>b.goals-a.goals)
-.forEach(p=>{
-list.innerHTML+=`
-<div class="scorer-row">
-<img src="${p.image}" onerror="this.src='https://via.placeholder.com/100'">
-<div style="flex:1">
-<div>${p.name}</div>
-<div style="font-size:11px;color:#9ca3af">Team ${p.team}</div>
-</div>
-<div style="font-weight:700">${p.goals}</div>
-</div>`;
-});
-}
-document.getElementById('allScorersModal').style.display='flex';
+  const list=document.getElementById('allScorersList');
+  list.innerHTML='';
+  if(Object.keys(totals).length===0){
+    list.innerHTML='<div class="empty">No goals scored yet</div>';
+  }else{
+    Object.keys(totals)
+      .map(id=>({...playerMap[id],goals:totals[id]}))
+      .sort((a,b)=>b.goals-a.goals)
+      .forEach(p=>{
+        list.innerHTML+=`
+        <div class="scorer-row">
+          <img src="${p.image}">
+          <div style="flex:1">
+            <div>${p.name}</div>
+            <div style="font-size:11px;color:#9ca3af">Team ${p.team}</div>
+          </div>
+          <strong>${p.goals}</strong>
+        </div>`;
+      });
+  }
+  document.getElementById('allScorersModal').style.display='flex';
 }
 function closeAllScorers(){
-document.getElementById('allScorersModal').style.display='none';
+  document.getElementById('allScorersModal').style.display='none';
 }
 </script>
 </body>
